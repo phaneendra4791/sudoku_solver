@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for better mobile experience */
+@layer base {
+  html {
+    font-family: system-ui, sans-serif;
+  }
+}
+
+/* Additional responsive utilities */
+@layer utilities {
+  .aspect-square {
+    aspect-ratio: 1 / 1;
+  }
+}
+
+/* Custom focus styles */
+input:focus {
+  transform: scale(1.05);
+  transition: transform 0.1s ease-in-out;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
