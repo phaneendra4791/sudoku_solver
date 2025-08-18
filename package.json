@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A modern Sudoku solver built with React and TailwindCSS",
   "type": "module",
-  "main": "index.js",
+  "main": "src/main.jsx",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

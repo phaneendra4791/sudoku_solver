@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { solveSudoku, isValidBoard, getHint, copyBoard } from './solver';
+import { solveSudoku, isValidBoard, getHint, copyBoard, SudokuSolver } from './solver';
 
 // Create empty 9x9 board
 const createEmptyBoard = () => {
@@ -10,6 +10,10 @@ function App() {
   const [board, setBoard] = useState(createEmptyBoard);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [solvingSteps, setSolvingSteps] = useState([]);
+  const [difficulty, setDifficulty] = useState(null);
+  const [showCandidates, setShowCandidates] = useState(false);
+  const [lastHint, setLastHint] = useState(null);
 
   // Handle cell input change
   const handleCellChange = (row, col, value) => {
@@ -20,13 +24,17 @@ function App() {
       newBoard[row][col] = numValue;
       setBoard(newBoard);
       setError('');
+      setLastHint(null);
+      setSolvingSteps([]);
+      setDifficulty(null);
     }
   };
 
-  // Solve the Sudoku puzzle
+  // Solve the Sudoku puzzle with advanced techniques
   const handleSolve = () => {
     setIsLoading(true);
     setError('');
+    setSolvingSteps([]);
     
     const boardCopy = copyBoard(board);
     
@@ -36,10 +44,26 @@ function App() {
       return;
     }
 
-    if (solveSudoku(boardCopy)) {
-      setBoard(boardCopy);
-    } else {
-      setError('This Sudoku puzzle has no solution.');
+    // Use the advanced solver
+    try {
+      const solver = new SudokuSolver();
+      const result = solver.solve(boardCopy);
+      
+      if (result.success) {
+        setBoard(boardCopy);
+        setSolvingSteps(result.steps);
+        const difficultyAnalysis = solver.analyzeDifficulty(board);
+        setDifficulty(difficultyAnalysis);
+      } else {
+        setError(result.error || 'This Sudoku puzzle has no solution.');
+      }
+    } catch (err) {
+      // Fallback to basic solver
+      if (solveSudoku(boardCopy)) {
+        setBoard(boardCopy);
+      } else {
+        setError('This Sudoku puzzle has no solution.');
+      }
     }
     
     setIsLoading(false);
@@ -49,19 +73,59 @@ function App() {
   const handleClear = () => {
     setBoard(createEmptyBoard());
     setError('');
+    setSolvingSteps([]);
+    setDifficulty(null);
+    setLastHint(null);
   };
 
-  // Get a hint
+  // Get an intelligent hint
   const handleHint = () => {
     setError('');
-    const hint = getHint(board);
     
-    if (hint) {
-      const newBoard = copyBoard(board);
-      newBoard[hint.row][hint.col] = hint.value;
-      setBoard(newBoard);
-    } else {
-      setError('No hints available. The puzzle might be complete or unsolvable.');
+    try {
+      const solver = new SudokuSolver();
+      const hint = solver.getIntelligentHint(board);
+      
+      if (hint) {
+        const newBoard = copyBoard(board);
+        newBoard[hint.row][hint.col] = hint.value;
+        setBoard(newBoard);
+        setLastHint({
+          ...hint,
+          cellId: `${hint.row}-${hint.col}`
+        });
+      } else {
+        setError('No hints available. The puzzle might be complete or unsolvable.');
+      }
+    } catch (err) {
+      // Fallback to basic hint
+      const hint = getHint(board);
+      if (hint) {
+        const newBoard = copyBoard(board);
+        newBoard[hint.row][hint.col] = hint.value;
+        setBoard(newBoard);
+        setLastHint({
+          row: hint.row,
+          col: hint.col,
+          value: hint.value,
+          technique: 'Basic Hint',
+          explanation: 'Next logical step',
+          cellId: `${hint.row}-${hint.col}`
+        });
+      } else {
+        setError('No hints available. The puzzle might be complete or unsolvable.');
+      }
+    }
+  };
+
+  // Analyze current puzzle difficulty
+  const handleAnalyze = () => {
+    try {
+      const solver = new SudokuSolver();
+      const analysis = solver.analyzeDifficulty(board);
+      setDifficulty(analysis);
+    } catch (err) {
+      setError('Unable to analyze puzzle difficulty.');
     }
   };
 
